@@ -1563,8 +1563,8 @@
   }
 </style></head><body>
   <div class="report-header">
-    <div class="report-title">Psy-CT心理测评系统报告单</div>
-    <div class="report-sub">MMPI-2 人格测验</div>
+    <div class="report-title">Psy-CT心理测评系统报告单（MMPI-2 多相人格测验）</div>
+    <div class="report-sub">请关注”金永昊讲道理“公众号获取使用说明与报告公益解读</div>
   </div>
   <table class="info-table">
     <tr>
@@ -1674,7 +1674,7 @@
         <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:6px">
           <div>
             <h1 class="font-tech font-bold text-white" style="text-shadow:0 0 16px rgba(0,212,255,0.4)">Psy-CT 心理测评系统</h1>
-            <p class="sub text-slate-500">基于 MMPI 量表体系 · 请如实作答</p>
+            <p class="sub text-slate-500">请关注”金永昊讲道理“公众号获取使用说明及报告公益解读</p>
           </div>
           <div class="glass progress-inline" id="progress-panel" style="min-width:200px"></div>
         </div>
@@ -1859,5 +1859,49 @@
   loadState();
   renderShell();
   </script>
+
+<!-- 注意事项弹窗 -->
+<div id="notice-modal" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);backdrop-filter:blur(6px);">
+  <div style="background:var(--panel);border:1px solid var(--border);border-radius:16px;box-shadow:0 0 40px rgba(0,212,255,0.15),inset 0 1px 0 rgba(255,255,255,0.04);max-width:480px;width:90%;padding:28px 24px;text-align:center;position:relative;">
+    <div style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:60%;height:2px;background:linear-gradient(90deg,transparent,var(--cyan),transparent);border-radius:2px;"></div>
+
+    <h2 style="margin:0 0 16px;font-size:18px;font-weight:700;color:var(--cyan);font-family:'Orbitron',monospace;letter-spacing:0.08em;text-shadow:0 0 16px rgba(0,212,255,0.4);">⚠ 作答注意事项</h2>
+
+    <div style="text-align:left;font-size:13px;line-height:1.8;color:#cbd5e1;margin-bottom:20px;">
+      <p style="margin:0 0 8px;"><span style="color:var(--cyan);font-weight:600;">1.</span> 请根据您<strong>最近两周</strong>的真实感受作答，不要过度思考。</p>
+      <p style="margin:0 0 8px;"><span style="color:var(--cyan);font-weight:600;">2.</span> 本测评共 <strong>567</strong> 题，预计耗时 45–60 分钟，建议一次性完成。</p>
+      <p style="margin:0 0 8px;"><span style="color:var(--cyan);font-weight:600;">3.</span> 答题过程中可随时查看左侧实时分数面板，进度自动保存。</p>
+      <p style="margin:0 0 8px;"><span style="color:var(--cyan);font-weight:600;">4.</span> 作答完成后可点击「打印报告单」生成 PDF 格式诊断报告。</p>
+      <p style="margin:0;"><span style="color:var(--cyan);font-weight:600;">5.</span> 报告生成后建议关注公众号获取<strong>公益解读</strong>与使用说明。</p>
+    </div>
+
+    <div style="border:1px solid rgba(0,212,255,0.25);border-radius:10px;padding:14px 16px;margin-bottom:20px;background:rgba(0,212,255,0.06);">
+      <p style="margin:0 0 6px;font-size:12px;color:#94a3b8;">关注公众号获取报告解读与使用说明</p>
+      <p style="margin:0;font-size:20px;font-weight:800;color:var(--cyan);font-family:'Noto Sans SC',sans-serif;text-shadow:0 0 16px rgba(0,212,255,0.5),0 0 4px rgba(0,212,255,0.8);letter-spacing:0.05em;">金永昊讲道理</p>
+    </div>
+
+    <button id="notice-confirm" style="padding:12px 36px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:linear-gradient(135deg,rgba(0,212,255,0.35),rgba(124,58,237,0.35));color:#fff;font-size:14px;font-weight:600;box-shadow:0 0 16px rgba(0,212,255,0.25);transition:all 0.2s;font-family:'Noto Sans SC',sans-serif;" onmouseover="this.style.boxShadow='0 0 24px rgba(0,212,255,0.4)'" onmouseout="this.style.boxShadow='0 0 16px rgba(0,212,255,0.25)'">我已了解，开始作答</button>
+  </div>
+</div>
+
+<script>
+(function() {
+  const modal = document.getElementById('notice-modal');
+  const confirmBtn = document.getElementById('notice-confirm');
+  const alreadyShown = sessionStorage.getItem('psy-ct-notice-shown');
+  if (alreadyShown) {
+    modal.style.display = 'none';
+  } else {
+    confirmBtn.addEventListener('click', function() {
+      modal.style.opacity = '0';
+      modal.style.transition = 'opacity 0.3s ease';
+      setTimeout(function() {
+        modal.style.display = 'none';
+      }, 300);
+      sessionStorage.setItem('psy-ct-notice-shown', '1');
+    });
+  }
+})();
+</script>
 </body>
 </html>
