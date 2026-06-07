@@ -3,43 +3,289 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="initial-scale=1, width=device-width" />
-  <meta name="keywords" content="mmpi-2" />
-  <meta name="description" content="MMPI-2 结果计算器" />
-  <title>MMPI-2 计算器</title>
+  <meta name="keywords" content="Psy-CT,MMPI,心理测评" />
+  <meta name="description" content="Psy-CT心理测评系统 — 基于 MMPI 的多维人格测评" />
+  <title>Psy-CT 心理测评系统</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { overflow-y: scroll; background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%); min-height: 100vh; }
-    .btn-group { display: inline-flex; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-    .btn-group button { border: none; padding: 8px 20px; cursor: pointer; background: white; transition: all 0.2s ease; font-size: 14px; font-weight: 500; }
-    .btn-group button:first-child { border-radius: 8px 0 0 8px; }
-    .btn-group button:last-child { border-radius: 0 8px 8px 0; }
-    .btn-group button:not(:first-child) { margin-left: -1px; border-left: 1px solid #e5e7eb; }
-    .btn-group button:hover { background: #f3f4f6; }
-    .btn-group button.active { background: #3b82f6; color: white; z-index: 1; position: relative; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3); }
-    .answer-btn { padding: 6px 16px; border: 1px solid #d1d5db; cursor: pointer; background: white; font-size: 13px; font-weight: 500; transition: all 0.2s ease; min-width: 48px; text-align: center; border-radius: 6px; }
-    .answer-btn:hover { background: #f3f4f6; border-color: #9ca3af; }
-    .answer-btn.active-true { background: #10b981; color: white; border-color: #10b981; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); }
-    .answer-btn.active-false { background: #ef4444; color: white; border-color: #ef4444; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3); }
-    .answer-item { transition: all 0.2s ease; }
-    .answer-item.highlight { box-shadow: 0 0 0 3px #fef3c7, 0 4px 20px rgba(251, 191, 36, 0.3); transform: scale(1.01); }
-    table.results { border-collapse: collapse; width: 100%; font-size: 13px; }
-    table.results th { padding: 10px 12px; text-align: left; background: #f9fafb; font-weight: 600; color: #374151; }
-    table.results td { padding: 8px 12px; border-bottom: 1px solid #f3f4f6; }
-    table.results td:first-child { font-weight: 600; color: #1f2937; }
-    table.results tr:hover td { background: #f9fafb; }
-    .pagination-btn { padding: 8px 16px; border: 1px solid #d1d5db; cursor: pointer; background: white; font-size: 14px; border-radius: 8px; transition: all 0.2s ease; font-weight: 500; }
-    .pagination-btn:hover:not(:disabled) { background: #f3f4f6; border-color: #9ca3af; }
-    .pagination-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    :root {
+      --bg: #060b14;
+      --panel: rgba(12, 22, 40, 0.72);
+      --border: rgba(0, 212, 255, 0.22);
+      --cyan: #00d4ff;
+      --cyan-dim: rgba(0, 212, 255, 0.15);
+      --purple: #7c3aed;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+    body {
+      font-family: 'Noto Sans SC', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+    }
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    body::after {
+      content: '';
+      position: fixed; top: -20%; left: 50%; transform: translateX(-50%);
+      width: 80%; height: 50%;
+      background: radial-gradient(ellipse, rgba(0, 212, 255, 0.08) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    #app {
+      position: relative; z-index: 1;
+      height: 100vh; max-height: 100vh;
+      display: flex; flex-direction: column;
+      padding: 6px 10px 8px;
+      overflow: hidden;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .app-top { flex-shrink: 0; }
+    .app-top h1 { font-size: 1.15rem; margin: 0; line-height: 1.3; }
+    .app-top .sub { font-size: 10px; margin: 0; }
+    .toolbar-row {
+      display: flex; flex-wrap: wrap; align-items: center;
+      justify-content: space-between; gap: 6px;
+      margin-top: 6px;
+    }
+    .toolbar-row .glass { padding: 6px 10px; border-radius: 8px; margin: 0; }
+    .progress-inline { flex: 1; min-width: 120px; max-width: 280px; }
+    .app-main {
+      flex: 1; min-height: 0;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    @media (max-width: 900px) {
+      html, body { overflow: auto; height: auto; }
+      #app { height: auto; max-height: none; overflow: visible; }
+      .app-main { grid-template-columns: 1fr; }
+      .scores-panel .scores-wrap { max-height: 200px; }
+    }
+    .panel-col {
+      min-height: 0;
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .panel-col .glass { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 8px 10px; margin: 0; }
+    .panel-title {
+      font-size: 11px; font-weight: 600; color: #cbd5e1;
+      margin-bottom: 4px; flex-shrink: 0;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .live-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #22c55e; box-shadow: 0 0 8px #22c55e;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 50% { opacity: 0.4; } }
+    .font-tech { font-family: 'Orbitron', monospace; letter-spacing: 0.06em; }
+    .glass {
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 0 24px rgba(0, 212, 255, 0.06), inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+    .btn-group { display: inline-flex; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+    .btn-group button {
+      border: none; padding: 7px 18px; cursor: pointer;
+      background: rgba(0,0,0,0.3); color: var(--muted);
+      transition: all 0.2s; font-size: 13px; font-weight: 500;
+    }
+    .btn-group button:not(:first-child) { border-left: 1px solid var(--border); }
+    .btn-group button:hover { background: var(--cyan-dim); color: var(--text); }
+    .btn-group button.active {
+      background: linear-gradient(135deg, rgba(0,212,255,0.35), rgba(124,58,237,0.35));
+      color: #fff; box-shadow: 0 0 12px rgba(0, 212, 255, 0.35);
+    }
+    .action-btn {
+      padding: 8px 16px; border: 1px solid var(--border); cursor: pointer;
+      background: rgba(0,0,0,0.25); color: var(--text); font-size: 13px;
+      border-radius: 8px; transition: all 0.2s; font-weight: 500;
+    }
+    .action-btn:hover:not(:disabled) { border-color: var(--cyan); box-shadow: 0 0 10px rgba(0,212,255,0.2); }
+    .action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .action-btn.danger { border-color: rgba(248,113,113,0.4); color: #fca5a5; }
+    .action-btn.danger:hover { background: rgba(239,68,68,0.15); }
+    .progress-track { background: rgba(0,0,0,0.4); border-radius: 999px; height: 6px; overflow: hidden; border: 1px solid var(--border); }
+    .progress-fill {
+      height: 100%; border-radius: 999px;
+      background: linear-gradient(90deg, var(--cyan), var(--purple));
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.5);
+      transition: width 0.35s ease;
+    }
+    /* 量表区：占满左栏，可滚动、字号可读 */
+    .scores-wrap {
+      flex: 1; min-height: 0;
+      overflow-y: auto; overflow-x: hidden;
+      scrollbar-width: thin; scrollbar-color: var(--cyan) rgba(0,0,0,0.2);
+      padding-right: 4px;
+    }
+    .scores-wrap::-webkit-scrollbar { width: 6px; }
+    .scores-wrap::-webkit-scrollbar-thumb { background: var(--cyan); border-radius: 4px; }
+    .subject-bar {
+      flex-shrink: 0;
+      margin-top: 6px;
+      padding: 10px 12px;
+      border: 1px solid rgba(0, 212, 255, 0.35);
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(124, 58, 237, 0.08));
+      box-shadow: 0 0 20px rgba(0, 212, 255, 0.08);
+    }
+    .subject-bar-title {
+      font-size: 12px; font-weight: 600; color: var(--cyan);
+      margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+    }
+    .subject-fields {
+      display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 16px;
+    }
+    .field-block label {
+      display: block; font-size: 11px; color: #94a3b8; margin-bottom: 4px; font-weight: 500;
+    }
+    .field-block input {
+      width: 140px; padding: 8px 10px; font-size: 14px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: rgba(0, 0, 0, 0.45); color: #fff;
+      outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .field-block input:focus {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2);
+    }
+    .field-block input.age-input { width: 72px; }
+    .gender-block .btn-group button { padding: 10px 22px; font-size: 14px; }
+    .btn-print {
+      padding: 10px 20px; font-size: 14px; font-weight: 600;
+      border: 1px solid #0ea5e9; border-radius: 8px; cursor: pointer;
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #fff; box-shadow: 0 2px 12px rgba(14, 165, 233, 0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .btn-print:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(14, 165, 233, 0.45); }
+    .score-table {
+      width: 100%; border-collapse: collapse; font-size: 11px;
+    }
+    .score-table thead th {
+      position: sticky; top: 0; z-index: 2;
+      background: rgba(12, 22, 40, 0.98);
+      padding: 5px 6px; text-align: left; font-weight: 600;
+      color: var(--muted); border-bottom: 1px solid var(--border);
+      font-size: 10px;
+    }
+    .score-table thead th:nth-child(n+3) { text-align: center; width: 36px; }
+    .score-table tbody tr {
+      border-bottom: 1px solid rgba(0, 212, 255, 0.08);
+      transition: background 0.15s;
+    }
+    .score-table tbody tr.flash { background: rgba(0, 212, 255, 0.14); }
+    .score-table tbody tr:hover { background: rgba(0, 212, 255, 0.06); }
+    .score-table td { padding: 4px 6px; vertical-align: middle; }
+    .score-table .code {
+      font-family: 'Orbitron', monospace; font-size: 10px;
+      color: var(--cyan); white-space: nowrap; width: 42px;
+    }
+    .score-table .label { color: #e2e8f0; line-height: 1.3; min-width: 0; }
+    .score-table .num { text-align: center; font-variant-numeric: tabular-nums; color: #94a3b8; }
+    .score-table .num.t-high { color: #fbbf24; font-weight: 700; }
+    .score-group-title {
+      font-size: 10px; font-weight: 600; color: var(--cyan);
+      letter-spacing: 0.05em;
+      padding: 6px 6px 4px; border-left: 3px solid var(--cyan);
+      margin: 8px 0 2px; background: rgba(0, 212, 255, 0.05);
+    }
+    /* 题目卡片 */
+    .card-stage { position: relative; flex: 1; min-height: 140px; overflow: hidden; }
+    .question-card {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      padding: 24px 20px; text-align: center;
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s;
+    }
+    .question-card.slide-out-left { transform: translateX(-120%); opacity: 0; }
+    .question-card.slide-out-right { transform: translateX(120%); opacity: 0; }
+    .question-card.slide-in { animation: slideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1); }
+    @keyframes slideIn {
+      from { transform: translateX(80px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    .q-num {
+      font-family: 'Orbitron', monospace;
+      font-size: 10px; color: var(--cyan);
+      border: 1px solid var(--border); padding: 3px 10px; border-radius: 999px;
+      margin-bottom: 10px;
+    }
+    .q-text { font-size: 15px; line-height: 1.55; color: #f1f5f9; max-width: 100%; margin-bottom: 14px; padding: 0 8px; }
+    .answer-pair { display: flex; gap: 12px; }
+    .answer-big {
+      min-width: 88px; padding: 10px 24px; border-radius: 8px;
+      border: 1px solid var(--border); background: rgba(0,0,0,0.35);
+      color: var(--text); font-size: 16px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .answer-big:hover { border-color: var(--cyan); transform: translateY(-2px); }
+    .answer-big.yes.active { background: rgba(16,185,129,0.25); border-color: #10b981; color: #6ee7b7; box-shadow: 0 0 20px rgba(16,185,129,0.3); }
+    .answer-big.no.active { background: rgba(239,68,68,0.2); border-color: #ef4444; color: #fca5a5; box-shadow: 0 0 20px rgba(239,68,68,0.25); }
+    .answer-big kbd {
+      display: inline-block; margin-left: 4px; padding: 1px 4px;
+      font-size: 9px; font-family: 'Orbitron', monospace;
+      background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 3px; vertical-align: middle; opacity: 0.85;
+    }
+    .nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 6px; flex-shrink: 0; }
+    .kbd-hints {
+      display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 12px;
+      margin-top: 8px; padding: 8px 10px; border-radius: 8px;
+      background: rgba(0, 212, 255, 0.06); border: 1px solid var(--border);
+      font-size: 11px; color: var(--muted); flex-shrink: 0;
+    }
+    .kbd-hints .hint-group { display: flex; align-items: center; gap: 4px; }
+    .kbd-hints kbd {
+      display: inline-block; min-width: 20px; padding: 2px 6px;
+      font-family: 'Orbitron', monospace; font-size: 10px; text-align: center;
+      background: rgba(0,0,0,0.45); border: 1px solid var(--border);
+      border-radius: 4px; color: var(--cyan); box-shadow: 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .kbd-hints .sep { color: #475569; margin: 0 2px; }
+    .mmpi-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 4px; font-size: 10px;
+      background: rgba(124, 58, 237, 0.2); border: 1px solid rgba(124, 58, 237, 0.4);
+      color: #c4b5fd;
+    }
+    .corner-glow {
+      position: absolute; width: 80px; height: 80px;
+      border: 1px solid var(--border); opacity: 0.5; pointer-events: none;
+    }
+    .corner-glow.tl { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+    .corner-glow.br { bottom: 8px; right: 8px; border-left: none; border-top: none; }
+    @media print {
+      body::before, body::after { display: none !important; }
+    }
   </style>
 </head>
-<body class="min-h-screen">
-  <div id="app" class="max-w-7xl mx-auto px-4 py-6 select-none"></div>
+<body>
+  <div id="app" class="select-none"></div>
 
   <script>
   // ======================== DATA ========================
   const QUESTION_COUNT = 567;
-  const PAGE_SIZE = 100;
-
   const questions = [
     "我对机械工程相关的内容感兴趣。",
     "通常，我的食欲不错。",
@@ -619,6 +865,47 @@
     "附加量表": ["AGGR","DISC","INTR","NEGE","PSYC","A","R","Es","Do","Re","Mt","PK","MDS","Ho","O-H","MAC-R","AAS","APS","GM","GF","RCd","RC1","RC2","RC3","RC4","RC6","RC7","RC8","RC9"]
   };
 
+  const scaleLabels = {
+    F: "罕见回答", Fb: "后段罕见", Fp: "精神病罕见", FBS: "躯体不适",
+    L: "说谎(L)", K: "防御(K)", S: "压抑(S)",
+    Hs: "疑病", D: "抑郁", Hy: "癔症", Pd: "精神病态", Mf: "男子气-女子气",
+    Pa: "妄想", Pt: "精神衰弱", Sc: "精神分裂", Ma: "轻躁狂", Si: "社会内向",
+    D1: "抑郁-主观", D2: "抑郁-精神", D3: "抑郁-躯体", D4: "抑郁-精神运动", D5: "抑郁-一般",
+    Hy1: "癔症-转换", Hy2: "癔症-躯体", Hy3: "癔症-否认", Hy4: "癔症-认知", Hy5: "癔症-抑制",
+    Pd1: "精神病态-家庭", Pd2: "精神病态-权威", Pd3: "精神病态-社会", Pd4: "精神病态-冲动", Pd5: "精神病态-自我",
+    Pa1: "妄想-迫害", Pa2: "妄想-多疑", Pa3: "妄想-被害",
+    Sc1: "精神分裂-社会", Sc2: "精神分裂-认知", Sc3: "精神分裂-情感", Sc4: "精神分裂-怪异", Sc5: "精神分裂-缺陷", Sc6: "精神分裂-活动",
+    Ma1: "轻躁狂-能量", Ma2: "轻躁狂-精神", Ma3: "轻躁狂-抑制", Ma4: "轻躁狂-行为",
+    Si1: "社会内向-羞怯", Si2: "社会内向-回避", Si3: "社会内向-不适",
+    ANG: "愤怒", ANX: "焦虑", ASP: "反社会", BIZ: "怪异思维", CYN: "愤世",
+    DEP: "抑郁内容", FAM: "家庭问题", FRS: "恐惧", HEA: "健康关注",
+    LSE: "低自尊", OBS: "强迫", SOD: "社交不适", TPA: "冲动", TRT: "治疗抵触", WRK: "工作问题",
+    ANG1: "愤怒-情感", ANG2: "愤怒-行为", ASP1: "反社会-行为", ASP2: "反社会-态度",
+    BIZ1: "怪异-心理", BIZ2: "怪异-幻觉", CYN1: "愤世-人际", CYN2: "愤世-社会",
+    DEP1: "抑郁-认知", DEP2: "抑郁-情感", DEP3: "抑郁-躯体", DEP4: "抑郁-动力",
+    FAM1: "家庭-冲突", FAM2: "家庭-疏离", FRS1: "恐惧-一般", FRS2: "恐惧-特定",
+    HEA1: "健康-胃肠", HEA2: "健康-神经", HEA3: "健康-一般",
+    LSE1: "低自尊-自信", LSE2: "低自尊-价值", SOD1: "社交-回避", SOD2: "社交-羞怯",
+    TPA1: "冲动-控制", TPA2: "冲动-行为", TRT1: "治疗-态度", TRT2: "治疗-动机",
+    AGGR: "攻击性", DISC: "违纪", INTR: "内向", NEGE: "负性情绪", PSYC: "精神病",
+    A: "焦虑(A)", R: "压抑(R)", Es: "自我强度", Do: "支配", Re: "责任", Mt: "治疗",
+    PK: "创伤后应激", MDS: "婚姻困扰", Ho: "敌意", "O-H": "过度自控",
+    "MAC-R": "酒精-修正", AAS: "成瘾承认", APS: "成瘾潜力",
+    GM: "男性化", GF: "女性化",
+    RCd: "痛苦不适", RC1: "躯体抱怨", RC2: "退缩", RC3: "愤世", RC4: "反社会",
+    RC6: "怪异", RC7: "焦虑", RC8: "思维障碍", RC9: "轻躁狂"
+  };
+
+  function getScaleLabel(code) {
+    if (code === 'VRIN' || code === 'TRIN') return '';
+    return scaleLabels[code] || code;
+  }
+
+  function formatScaleDesc(code) {
+    const label = getScaleLabel(code);
+    return label ? `${code}（${label}）` : code;
+  }
+
   const kCorrections = { Pd: 0.4, Hs: 0.5, Pt: 1, Sc: 1, Ma: 0.2 };
 
   const mainScales = {
@@ -1085,16 +1372,27 @@
   }
 
   // ======================== STATE ========================
-  let state = { gender: 'male', mode: 'raw', page: 0, answers: new Array(QUESTION_COUNT).fill(null) };
+  let state = {
+    name: '',
+    age: '',
+    gender: 'male',
+    currentQuestion: 0,
+    answers: new Array(QUESTION_COUNT).fill(null),
+    slideDir: null
+  };
 
   function loadState() {
     try {
-      const saved = localStorage.getItem('mmpi2-data');
+      const saved = localStorage.getItem('psy-ct-data') || localStorage.getItem('mmpi2-data');
       if (saved) {
         const parsed = JSON.parse(saved);
+        state.name = parsed.name || '';
+        state.age = parsed.age != null ? String(parsed.age) : '';
         state.gender = parsed.gender || 'male';
-        state.mode = parsed.mode || 'raw';
-        state.page = parsed.page || 0;
+        state.currentQuestion = Math.min(
+          Math.max(0, parsed.currentQuestion ?? parsed.page ?? 0),
+          QUESTION_COUNT - 1
+        );
         state.answers = parsed.answers || new Array(QUESTION_COUNT).fill(null);
       }
     } catch(e) {}
@@ -1102,174 +1400,464 @@
 
   function saveState() {
     try {
-      localStorage.setItem('mmpi2-data', JSON.stringify(state));
+      localStorage.setItem('psy-ct-data', JSON.stringify(state));
     } catch(e) {}
   }
 
   // ======================== RENDER ========================
-  function render() {
-    const app = document.getElementById('app');
+  let lastScoreSnapshot = null;
+
+  function computeAllScores() {
+    const raw = calculateResults(state.answers, state.gender, 'raw');
+    const k = calculateKCorrected(raw);
+    const ten = calculateTenScales(k, state.gender);
+    return { raw, k, ten };
+  }
+
+  function renderCompactScores(raw, k, ten) {
+    const tableHead = `<thead><tr><th>代号</th><th>分量表名称</th><th>原</th><th>K</th><th>T</th></tr></thead>`;
+    return Object.entries(scaleHierarchy).map(([group, scales]) => `
+      <div class="score-group-block">
+        <div class="score-group-title">${group}</div>
+        <table class="score-table">
+          ${tableHead}
+          <tbody>
+            ${scales.map(s => {
+              const t = ten[s];
+              const tClass = t >= 70 ? ' t-high' : '';
+              const prev = lastScoreSnapshot;
+              const changed = prev && (prev.raw[s] !== raw[s] || prev.k[s] !== k[s] || prev.ten[s] !== ten[s]);
+              return `<tr class="${changed ? 'flash' : ''}" data-scale="${s}">
+                <td class="code">${s}</td>
+                <td class="label">${getScaleLabel(s)}</td>
+                <td class="num">${raw[s]}</td>
+                <td class="num">${k[s]}</td>
+                <td class="num${tClass}">${t}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `).join('');
+  }
+
+  function getProgressHtml() {
     const remaining = state.answers.filter(a => a === null).length;
     const answered = QUESTION_COUNT - remaining;
     const progress = Math.round((answered / QUESTION_COUNT) * 100);
-    const rawResults = calculateResults(state.answers, state.gender, 'raw');
-    const kResults = calculateResults(state.answers, state.gender, 'k');
-    const tenResults = calculateResults(state.answers, state.gender, 'ten');
-    const hierarchy = Object.entries(scaleHierarchy);
+    const status = remaining === 0
+      ? '<span style="color:#6ee7b7">✓ 完成</span>'
+      : `未答 <span style="color:var(--cyan)">${remaining}</span> · <a class="underline cursor-pointer" style="color:var(--cyan)" onclick="goToFirstUnanswered()">未答题</a>`;
+    return { answered, progress, status };
+  }
 
-    app.innerHTML = `
-      <!-- 顶部标题 -->
-      <div class="text-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">MMPI-2 人格测试</h1>
-        <p class="text-sm text-gray-500">明尼苏达多项人格问卷第二版</p>
+  function refreshScores() {
+    const wrap = document.getElementById('scores-wrap');
+    if (!wrap) return;
+    const scores = computeAllScores();
+    wrap.innerHTML = renderCompactScores(scores.raw, scores.k, scores.ten);
+    lastScoreSnapshot = scores;
+    setTimeout(() => {
+      wrap.querySelectorAll('tr.flash').forEach(el => el.classList.remove('flash'));
+    }, 600);
+  }
+
+  function setSubject(field, value) {
+    state[field] = value;
+    saveState();
+  }
+
+  function syncSubjectInputs() {
+    const nameEl = document.getElementById('input-name');
+    const ageEl = document.getElementById('input-age');
+    if (nameEl && nameEl.value !== state.name) nameEl.value = state.name;
+    if (ageEl && ageEl.value !== state.age) ageEl.value = state.age;
+    updateGenderButtons();
+  }
+
+  function formatReportDate() {
+    const d = new Date();
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  function buildReportTableRows(scales, raw, k, ten) {
+    return scales.map(s => {
+      const t = ten[s];
+      const elevated = t >= 70 ? ' class="elevated"' : '';
+      return `<tr${elevated}>
+        <td>${s}</td>
+        <td>${getScaleLabel(s)}</td>
+        <td align="center">${raw[s]}</td>
+        <td align="center">${k[s]}</td>
+        <td align="center"><strong>${t}</strong></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function printReport() {
+    if (!(state.name || '').trim() && !confirm('尚未填写受测者姓名，仍要打印报告吗？')) return;
+    const name = (state.name || '').trim() || '未填写';
+    const age = (state.age || '').trim() || '未填写';
+    const genderText = state.gender === 'female' ? '女' : '男';
+    const answered = QUESTION_COUNT - state.answers.filter(a => a === null).length;
+    const { raw, k, ten } = computeAllScores();
+    const reportNo = 'PCT' + Date.now().toString(36).toUpperCase().slice(-8);
+    const elevated = Object.values(scaleHierarchy).flat().filter(s => ten[s] >= 70);
+
+    const sections = Object.entries(scaleHierarchy).map(([group, scales]) => `
+      <div class="report-section">
+        <div class="section-title">${group}</div>
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th width="48">代号</th>
+              <th>分量表名称</th>
+              <th width="44">原始分</th>
+              <th width="44">K校正</th>
+              <th width="44">T分</th>
+            </tr>
+          </thead>
+          <tbody>${buildReportTableRows(scales, raw, k, ten)}</tbody>
+        </table>
       </div>
+    `).join('');
 
-      <!-- 顶部控制栏 -->
-      <div class="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 bg-white rounded-xl shadow-sm border border-gray-100">
-        <div class="flex items-center gap-4">
-          <div class="btn-group">
-            <button class="${state.gender === 'female' ? 'active' : ''}" onclick="setGender('female')">♀ 女性</button>
-            <button class="${state.gender === 'male' ? 'active' : ''}" onclick="setGender('male')">♂ 男性</button>
-          </div>
-          <div class="text-sm text-gray-500">
-            当前: <span class="font-medium">${state.gender === 'female' ? '女性' : '男性'}</span>
-          </div>
-        </div>
-        <button class="pagination-btn text-red-600 border-red-300 hover:bg-red-50 transition-all" onclick="resetAnswers()">重置答题</button>
+    const elevatedHtml = elevated.length
+      ? `<p class="elevated-list">T分≥70（升高）量表：${elevated.map(s => `${formatScaleDesc(s)}=${ten[s]}`).join('；')}</p>`
+      : '<p class="elevated-list">T分≥70（升高）量表：未见明显升高项。</p>';
+
+    const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"/>
+<title>Psy-CT心理测评系统报告单 - ${name}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: "SimSun", "宋体", "Microsoft YaHei", serif; font-size: 12px; color: #000; background: #fff; padding: 12mm 15mm; }
+  .report-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 12px; }
+  .report-title { font-size: 20px; font-weight: bold; letter-spacing: 3px; }
+  .report-sub { font-size: 11px; color: #333; margin-top: 6px; }
+  .info-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12px; }
+  .info-table td { border: 1px solid #000; padding: 6px 10px; }
+  .info-table .label { width: 72px; background: #f5f5f5; font-weight: bold; text-align: center; }
+  .report-section { margin-bottom: 10px; page-break-inside: avoid; }
+  .section-title {
+    font-size: 13px; font-weight: bold; padding: 4px 8px;
+    background: #e8e8e8; border: 1px solid #000; border-bottom: none;
+  }
+  .report-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .report-table th, .report-table td { border: 1px solid #000; padding: 4px 6px; }
+  .report-table th { background: #f0f0f0; font-weight: bold; text-align: center; }
+  .report-table td:first-child { text-align: center; font-family: Arial, sans-serif; font-size: 10px; }
+  .report-table tr.elevated td { background: #fff8e6; }
+  .report-table tr.elevated td:last-child { color: #b45309; font-weight: bold; }
+  .remark-box {
+    border: 1px solid #000; padding: 10px; margin-top: 12px; min-height: 72px; font-size: 11px; line-height: 1.6;
+  }
+  .remark-box h4 { font-size: 12px; margin-bottom: 6px; }
+  .elevated-list { margin-top: 6px; }
+  .sign-row { display: flex; justify-content: space-between; margin-top: 24px; font-size: 12px; }
+  .sign-row span { border-bottom: 1px solid #000; min-width: 140px; display: inline-block; margin-left: 8px; }
+  .footer-note { margin-top: 12px; font-size: 10px; color: #444; text-align: center; line-height: 1.5; }
+  @media print {
+    body { padding: 10mm 12mm; }
+    @page { size: A4; margin: 10mm; }
+  }
+</style></head><body>
+  <div class="report-header">
+    <div class="report-title">Psy-CT心理测评系统报告单</div>
+    <div class="report-sub">MMPI-2 人格测验</div>
+  </div>
+  <table class="info-table">
+    <tr>
+      <td class="label">姓名</td><td>${name}</td>
+      <td class="label">性别</td><td>${genderText}</td>
+      <td class="label">年龄</td><td>${age}</td>
+    </tr>
+    <tr>
+      <td class="label">报告编号</td><td>${reportNo}</td>
+      <td class="label">测验日期</td><td colspan="3">${formatReportDate()}</td>
+    </tr>
+    <tr>
+      <td class="label">测验项目</td><td colspan="3">明尼苏达多项人格问卷（MMPI-2）</td>
+      <td class="label">完成题数</td><td>${answered} / ${QUESTION_COUNT}</td>
+    </tr>
+  </table>
+  ${sections}
+  <div class="remark-box">
+    <h4>【结果说明】</h4>
+    <p>1. 本报告基于 MMPI-2 量表结构自动计分，T 分参照所选性别常模转换，≥70 提示该维度相对升高，需结合临床访谈综合判断。</p>
+    <p>2. 原始分为各量表直接计分；K 校正分为部分临床量表经 K 量表校正后的分数。</p>
+    ${elevatedHtml}
+    <p style="margin-top:8px">3. 本报告仅供临床参考，不作单独诊断依据。</p>
+  </div>
+  <div class="sign-row">
+    <div>报告医师：<span></span></div>
+    <div>审核者：<span></span></div>
+    <div>打印时间：${formatReportDate()}</div>
+  </div>
+  <div class="footer-note">
+    —— 本报告由 Psy-CT 心理测评系统生成 · 请妥善保管 ——
+  </div>
+  <script>window.onload=function(){window.print();}<\/script>
+</body></html>`;
+
+    const w = window.open('', '_blank', 'width=900,height=700');
+    if (!w) {
+      alert('请允许弹出窗口以打印报告');
+      return;
+    }
+    w.document.write(html);
+    w.document.close();
+  }
+
+  function refreshProgress() {
+    const el = document.getElementById('progress-panel');
+    if (!el) return;
+    const { answered, progress, status } = getProgressHtml();
+    el.innerHTML = `
+      <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+        <span>进度</span>
+        <span class="font-tech" style="color:var(--cyan)">${answered}/${QUESTION_COUNT} · ${progress}%</span>
       </div>
-
-      <!-- 进度条 -->
-      <div class="mb-6">
-        <div class="flex justify-between text-sm text-gray-600 mb-2">
-          <span>答题进度</span>
-          <span>${answered} / ${QUESTION_COUNT} (${progress}%)</span>
-        </div>
-        <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-          <div class="h-full bg-blue-500 rounded-full transition-all duration-300" style="width: ${progress}%"></div>
-        </div>
-        <p class="text-center text-sm mt-2">
-          ${remaining === 0
-            ? '<span class="text-green-600 font-medium">🎉 所有问题已作答完成！</span>'
-            : `还剩 <span class="text-blue-600 font-semibold">${remaining}</span> 个问题未作答。 <a class="text-blue-600 underline cursor-pointer hover:text-blue-700" onclick="highlightUnanswered()">点击高亮显示未答题。</a>`
-          }
-        </p>
-      </div>
-
-      <!-- 结果区 -->
-      <div class="mb-8 p-4 bg-white rounded-xl shadow-sm border border-gray-100">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">量表分数</h2>
-        <div class="overflow-x-auto">
-          <table class="results w-full">
-            <thead>
-              <tr class="bg-gray-50">
-                <th class="rounded-tl-lg">量表</th>
-                <th>原始分</th>
-                <th>K校正</th>
-                <th class="rounded-tr-lg">T量表</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${hierarchy.map(([group, scales]) => `
-                <tr>
-                  <td colspan="4" class="font-semibold bg-gray-50 text-gray-700">${group}</td>
-                </tr>
-                ${scales.map(s => `
-                  <tr class="hover:bg-gray-50 transition-colors">
-                    <td class="font-medium">${s}</td>
-                    <td class="text-center">${rawResults[s]}</td>
-                    <td class="text-center">${kResults[s]}</td>
-                    <td class="text-center">${tenResults[s]}</td>
-                  </tr>
-                `).join('')}
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- 回答区 -->
-      <div class="p-4 bg-white rounded-xl shadow-sm border border-gray-100">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">题目作答</h2>
-        <div id="answers-grid" class="grid gap-3">
-          ${renderAnswerItems()}
-        </div>
-      </div>
-
-      <!-- 返回顶部按钮 -->
-      <div class="fixed bottom-8 right-8">
-        <button 
-          class="w-12 h-12 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 transition-all duration-200 hover:scale-110 flex items-center justify-center"
-          onclick="scrollToTop()"
-          title="返回顶部查看结果"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-          </svg>
-        </button>
-      </div>
-
-      <div class="mb-16"></div>
+      <div class="progress-track"><div class="progress-fill" style="width:${progress}%"></div></div>
+      <p class="text-[10px] text-slate-500 mt-1 text-center">${status}</p>
     `;
   }
 
-  function renderAnswerItems() {
-    let html = '';
-    for (let i = 0; i < QUESTION_COUNT; i++) {
-      const answer = state.answers[i];
-      const num = i + 1;
-      const question = questions[i] || '';
-      html += `
-        <div class="answer-item flex items-start gap-3 p-4 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm" data-unanswered="${answer === null}" data-index="${i}">
-          <div class="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-blue-100 text-blue-600 rounded-lg font-mono text-sm font-medium">${num}</div>
-          <div class="flex-grow">
-            <p class="text-sm text-gray-700 mb-3 leading-relaxed">${question}</p>
-            <div class="btn-group">
-              <button class="answer-btn ${answer === true ? 'active-true' : ''}" onclick="setAnswer(${i}, true)">是</button>
-              <button class="answer-btn ${answer === false ? 'active-false' : ''}" onclick="setAnswer(${i}, false)">否</button>
-            </div>
+  function renderQuestionCard() {
+    const i = state.currentQuestion;
+    const answer = state.answers[i];
+    const slideClass = state.slideDir ? 'slide-in' : '';
+    return `
+      <div class="card-stage" id="card-stage">
+        <div class="corner-glow tl"></div>
+        <div class="corner-glow br"></div>
+        <div class="question-card ${slideClass}" id="question-card">
+          <div class="q-num">ITEM ${String(i + 1).padStart(3, '0')} / ${QUESTION_COUNT}</div>
+          <p class="q-text">${questions[i] || ''}</p>
+          <div class="answer-pair">
+            <button type="button" class="answer-big yes ${answer === true ? 'active' : ''}" onclick="setAnswer(${i}, true)">是 <kbd>Y</kbd></button>
+            <button type="button" class="answer-big no ${answer === false ? 'active' : ''}" onclick="setAnswer(${i}, false)">否 <kbd>N</kbd></button>
           </div>
         </div>
-      `;
-    }
-    return html;
+      </div>
+    `;
+  }
+
+  function refreshQuestion(animateSlide) {
+    const host = document.getElementById('question-host');
+    if (!host) return;
+    const cq = state.currentQuestion;
+    const canPrev = cq > 0;
+    const canNext = cq < QUESTION_COUNT - 1;
+    host.innerHTML = `
+      ${renderQuestionCard()}
+      <div class="nav-row">
+        <button type="button" class="action-btn" ${canPrev ? '' : 'disabled'} onclick="navQuestion(-1)">← 上一题</button>
+        <span class="text-[10px] text-slate-500 font-tech">${cq + 1} / ${QUESTION_COUNT}</span>
+        <button type="button" class="action-btn" ${canNext ? '' : 'disabled'} onclick="navQuestion(1)">下一题 →</button>
+      </div>
+      <div class="kbd-hints">
+        <span class="hint-group"><kbd>Y</kbd><span class="sep">/</span><kbd>1</kbd> 作答「是」</span>
+        <span class="hint-group"><kbd>N</kbd><span class="sep">/</span><kbd>0</kbd> 作答「否」</span>
+        <span class="hint-group"><kbd>←</kbd><kbd>→</kbd> 切换题目</span>
+        <span class="hint-group" style="color:#64748b">答后自动下一题 · 可左右滑动</span>
+      </div>
+    `;
+    state.slideDir = null;
+    bindSwipe();
+  }
+
+  function renderShell() {
+    const app = document.getElementById('app');
+    app.innerHTML = `
+      <div class="app-top">
+        <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:6px">
+          <div>
+            <h1 class="font-tech font-bold text-white" style="text-shadow:0 0 16px rgba(0,212,255,0.4)">Psy-CT 心理测评系统</h1>
+            <p class="sub text-slate-500">基于 MMPI 量表体系 · 请如实作答</p>
+          </div>
+          <div class="glass progress-inline" id="progress-panel" style="min-width:200px"></div>
+        </div>
+        <div class="subject-bar">
+          <div class="subject-bar-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            受测者信息（请填写后再作答）
+          </div>
+          <div class="subject-fields">
+            <div class="field-block">
+              <label for="input-name">姓名</label>
+              <input type="text" id="input-name" placeholder="请输入姓名" value="${(state.name || '').replace(/"/g, '&quot;')}"
+                oninput="setSubject('name', this.value)" />
+            </div>
+            <div class="field-block">
+              <label for="input-age">年龄</label>
+              <input type="number" class="age-input" id="input-age" min="1" max="120" placeholder="岁"
+                value="${(state.age || '').replace(/"/g, '&quot;')}"
+                oninput="setSubject('age', this.value)" />
+            </div>
+            <div class="field-block gender-block">
+              <label>性别（影响常模）</label>
+              <div class="btn-group">
+                <button type="button" id="btn-female" onclick="setGender('female')">♀ 女性</button>
+                <button type="button" id="btn-male" onclick="setGender('male')">♂ 男性</button>
+              </div>
+            </div>
+            <button type="button" class="btn-print" onclick="printReport()">🖨 打印报告单</button>
+            <button type="button" class="action-btn danger" onclick="resetAnswers()">重置测评</button>
+          </div>
+        </div>
+      </div>
+      <div class="app-main">
+        <div class="panel-col scores-panel">
+          <div class="glass">
+            <div class="panel-title">
+              <span>量表分数 <span style="color:#64748b;font-weight:400">代号 + 分量表名</span></span>
+              <span style="display:flex;align-items:center;gap:5px;font-size:10px;color:#64748b">
+                <span class="live-dot"></span>实时
+              </span>
+            </div>
+            <div class="scores-wrap" id="scores-wrap"></div>
+          </div>
+        </div>
+        <div class="panel-col">
+          <div class="glass">
+            <div class="panel-title"><span>题目作答</span></div>
+            <div id="question-host" style="flex:1;min-height:0;display:flex;flex-direction:column"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    syncSubjectInputs();
+    refreshProgress();
+    refreshScores();
+    refreshQuestion();
+  }
+
+  function updateGenderButtons() {
+    const f = document.getElementById('btn-female');
+    const m = document.getElementById('btn-male');
+    if (f) f.classList.toggle('active', state.gender === 'female');
+    if (m) m.classList.toggle('active', state.gender === 'male');
   }
 
   // ======================== ACTIONS ========================
-  function scrollToTop() {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  function setGender(g) {
+    state.gender = g;
+    saveState();
+    updateGenderButtons();
+    refreshScores();
   }
 
-  function setGender(g) { state.gender = g; saveState(); render(); }
+  function navQuestion(delta, animate) {
+    const next = state.currentQuestion + delta;
+    if (next < 0 || next >= QUESTION_COUNT) return;
+    if (animate) {
+      const card = document.getElementById('question-card');
+      if (card) {
+        card.classList.add(delta > 0 ? 'slide-out-left' : 'slide-out-right');
+        state.slideDir = delta > 0 ? 'next' : 'prev';
+        setTimeout(() => {
+          state.currentQuestion = next;
+          saveState();
+          state.slideDir = delta > 0 ? 'next' : 'prev';
+          refreshQuestion();
+        }, 260);
+        return;
+      }
+    }
+    state.currentQuestion = next;
+    state.slideDir = delta > 0 ? 'next' : 'prev';
+    saveState();
+    refreshQuestion();
+  }
+
   function setAnswer(index, value) {
     state.answers[index] = value;
     saveState();
-    render();
+    refreshScores();
+    refreshProgress();
+    const yesBtn = document.querySelector('.answer-big.yes');
+    const noBtn = document.querySelector('.answer-big.no');
+    if (yesBtn && noBtn) {
+      yesBtn.classList.toggle('active', value === true);
+      noBtn.classList.toggle('active', value === false);
+    }
+    if (index < QUESTION_COUNT - 1) {
+      setTimeout(() => navQuestion(1, true), 180);
+    } else {
+      refreshProgress();
+    }
   }
 
   function resetAnswers() {
     if (!window.confirm('确定要重置吗？所有回答将被清零。')) return;
     state.answers = new Array(QUESTION_COUNT).fill(null);
+    state.currentQuestion = 0;
+    lastScoreSnapshot = null;
     saveState();
-    render();
+    refreshScores();
+    refreshProgress();
+    refreshQuestion();
   }
 
-  function highlightUnanswered() {
+  function goToFirstUnanswered() {
     const idx = state.answers.indexOf(null);
     if (idx === -1) return;
-    render();
-    setTimeout(() => {
-      const firstUnanswered = document.querySelector('[data-unanswered="true"]');
-      if (firstUnanswered) {
-        firstUnanswered.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        firstUnanswered.classList.add('highlight');
-        setTimeout(() => firstUnanswered.classList.remove('highlight'), 2000);
-      }
-    }, 100);
+    state.currentQuestion = idx;
+    state.slideDir = 'next';
+    saveState();
+    refreshQuestion();
   }
+
+  let swipeHandler = null;
+  function bindSwipe() {
+    const stage = document.getElementById('card-stage');
+    if (!stage) return;
+    if (swipeHandler) {
+      stage.removeEventListener('touchstart', swipeHandler.start);
+      stage.removeEventListener('touchend', swipeHandler.end);
+    }
+    let startX = 0;
+    const start = e => { startX = e.touches[0].clientX; };
+    const end = e => {
+      const dx = e.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) > 50) navQuestion(dx < 0 ? 1 : -1);
+    };
+    stage.addEventListener('touchstart', start, { passive: true });
+    stage.addEventListener('touchend', end, { passive: true });
+    swipeHandler = { start, end };
+  }
+
+  function handleKeydown(e) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    const key = e.key;
+    const i = state.currentQuestion;
+    if (key === 'y' || key === 'Y' || key === '1') {
+      e.preventDefault();
+      setAnswer(i, true);
+      return;
+    }
+    if (key === 'n' || key === 'N' || key === '0') {
+      e.preventDefault();
+      setAnswer(i, false);
+      return;
+    }
+    if (key === 'ArrowLeft') {
+      e.preventDefault();
+      navQuestion(-1);
+      return;
+    }
+    if (key === 'ArrowRight') {
+      e.preventDefault();
+      navQuestion(1);
+    }
+  }
+
+  document.addEventListener('keydown', handleKeydown);
 
   // ======================== INIT ========================
   loadState();
-  render();
+  renderShell();
   </script>
 </body>
 </html>
